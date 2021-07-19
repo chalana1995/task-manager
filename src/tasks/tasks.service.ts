@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateTaskDTO } from './dto/create-task.dto';
 import { GetTaskFillterDTO } from './dto/get-task-filter.dto';
+import { TaskStatus } from './task-status.enum';
 import { Task } from './task.entity';
 import { TaskRepository } from './task.repository';
 
@@ -13,6 +14,11 @@ export class TasksService {
         @InjectRepository(TaskRepository)
         private taskRepository: TaskRepository
     ) { }
+
+
+    async getTasks(getTaskDto: GetTaskFillterDTO): Promise<Task[]> {
+        return this.taskRepository.getTasks(getTaskDto);
+    }
 
     // getAllTasks(): Task[] {
     //     return this.tasks;
@@ -49,26 +55,30 @@ export class TasksService {
         return find;
     }
 
-    // createTask(createTaskDto: CreateTaskDTO): Task {
+    async createTask(createTaskDto: CreateTaskDTO): Promise<Task> {
+        return this.taskRepository.createTask(createTaskDto);
+    }
 
-    //     const { title, description } = createTaskDto;
 
-    //     let task: Task = {
-    //         id: uuidv4(),
-    //         title,
-    //         description,
-    //         status: TaskStatus.OPEN
-    //     }
+    async deleteTask(id: number): Promise<void> {
+        let result = await this.taskRepository.delete(id);
 
-    //     this.tasks.push(task);
+        if (result.affected === 0) {
+            throw new NotFoundException(`Task with ID "${id}" Not Found`);
+        }
 
-    //     return task;
-    // }
+    }
 
-    // deleteTask(id: string): void {
-    //     const found = this.getTaskById(id)
-    //     this.tasks = this.tasks.filter(task => task.id !== found.id);
-    // }
+    async updateTask(id: number, status: TaskStatus): Promise<Task> {
+        const task = await this.getTaskById(id);
+
+        task.status = status;
+
+        await task.save();
+
+        return task;
+
+    }
 
     // updateTask(id: string, status: TaskStatus): Task {
     //     const task = this.getTaskById(id);
